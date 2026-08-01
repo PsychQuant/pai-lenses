@@ -78,8 +78,12 @@ truthy 判準：`1` / `true` / `yes`（不分大小寫）。空白或省略 = fa
 ## 硬性前提：`plugin.json` 必須有 `version`
 
 Claude Code 把 plugin 解到 `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`。
-`plugin.json` 缺 `version` 時目錄名會是 `unknown`，`parallel-ai-agents` 的 semver glob 就定位不到，
-本 pack 等同沒裝（報表會出現 `unversioned` 警告）。CI 有守這一條。
+`plugin.json` 缺 `version` 時，目錄名會退回 **git commit SHA**（[官方文件](https://code.claude.com/docs/en/plugin-marketplaces)
+的 fallback）或 `unknown`（實測在 `claude-plugins-official` 的幾個 plugin 上看過）。兩者都不是 semver，
+`parallel-ai-agents` 的 semver glob 就定位不到，本 pack 等同沒裝 —— 但報表會出現 `unversioned` 警告，
+不會靜默。CI 有守這一條。
+
+順帶一提，這也是為什麼**每次改 lens 都要 bump 版本**：版本沒變，使用者端不會收到更新。
 
 ## License
 

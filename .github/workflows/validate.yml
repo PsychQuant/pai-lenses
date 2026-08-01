@@ -15,9 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # A lens pack without a version is invisible: Claude Code names the cache dir `unknown`
-      # instead of a semver, and the consumer's semver glob skips it. The pack would look
-      # installed and contribute nothing — the exact silent failure this repo exists to avoid.
+      # A lens pack without a version is effectively invisible: Claude Code falls back to naming
+      # the cache dir after the git commit SHA (or `unknown`), neither of which the consumer's
+      # semver glob matches. The pack would look installed and contribute nothing — the exact
+      # silent failure this repo exists to avoid. Bumping version is also what makes users
+      # actually receive an update, so a pinned-but-stale version is its own failure mode.
       - name: plugin.json has a semver version
         shell: bash
         run: |
@@ -25,7 +27,7 @@ jobs:
           V=$(python3 -c 'import json;print(json.load(open(".claude-plugin/plugin.json")).get("version",""))')
           echo "version = ${V:-<missing>}"
           [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || {
-            echo "::error::.claude-plugin/plugin.json needs a semver version — without it the cache dir is named 'unknown' and consumers cannot locate this pack"
+            echo "::error::.claude-plugin/plugin.json needs a semver version — without it the cache dir falls back to the commit SHA (or unknown) and the consumer semver glob cannot locate this pack"
             exit 1
           }
 
