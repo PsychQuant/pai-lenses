@@ -1,0 +1,66 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A lens pack without a version is invisible: Claude Code names the cache dir `unknown`
+      # instead of a semver, and the consumer's semver glob skips it. The pack would look
+      # installed and contribute nothing — the exact silent failure this repo exists to avoid.
+      - name: plugin.json has a semver version
+        shell: bash
+        run: |
+          set -o pipefail
+          V=$(python3 -c 'import json;print(json.load(open(".claude-plugin/plugin.json")).get("version",""))')
+          echo "version = ${V:-<missing>}"
+          [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || {
+            echo "::error::.claude-plugin/plugin.json needs a semver version — without it the cache dir is named 'unknown' and consumers cannot locate this pack"
+            exit 1
+          }
+
+      # Parse with the same stdlib csv module the consumer uses. Catches the failure mode that
+      # is otherwise silent: a typo'd header makes every row vanish while the file still "looks fine".
+      - name: every lenses/*.csv parses and yields ≥1 lens
+        shell: bash
+        run: |
+          set -o pipefail
+          shopt -s nullglob
+          files=(lenses/*.csv)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no lenses/*.csv found — an empty pack contributes nothing"; exit 1
+          fi
+          rc=0
+          for f in "${files[@]}"; do
+            python3 - "$f" <<'PY' || rc=1
+import csv, sys
+path = sys.argv[1]
+with open(path, newline="", encoding="utf-8-sig") as fh:
+    rows = [r for r in csv.DictReader(fh)]
+header_ok = rows and "key" in rows[0] and "focus" in rows[0]
+lenses = [r for r in rows if (r.get("key") or "").strip() and (r.get("focus") or "").strip()]
+if not header_ok:
+    print(f"::error file={path}::header must contain key,focus")
+    sys.exit(1)
+if not lenses:
+    print(f"::error file={path}::parses to 0 lenses — a file that exists but contributes nothing "
+          f"is worse than no file (the consumer warns, and reviewers silently lose a lens)")
+    sys.exit(1)
+print(f"{path}: {len(lenses)} lens(es) ok")
+for r in lenses:
+    if (r.get("override") or "").strip().lower() not in ("", "0", "false", "no", "1", "true", "yes"):
+        print(f"::warning file={path}::override='{r['override']}' is not a recognised truthy/falsy "
+              f"value (1/true/yes vs empty/0/false/no) — it will be read as false")
+PY
+          done
+          exit "$rc"
