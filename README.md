@@ -1,4 +1,25 @@
-# pai-lenses
+# pai-lenses（已搬遷 · ARCHIVED）
+
+> ## ⚠️ 這個 repo 已停止維護
+>
+> lens pack 已於 2026-08 併回主 repo，現在住在
+> **[`PsychQuant/parallel-ai-agents` → `plugins/pai-lenses/`](https://github.com/PsychQuant/parallel-ai-agents/tree/main/plugins/pai-lenses)**。
+>
+> - **要貢獻一條 lens** → 對 `parallel-ai-agents` 開 PR，改 `plugins/pai-lenses/lenses/<profile>.csv`
+> - **本機已經寫好 lens** → 跑 `/parallel-ai-agents:ensemble-contribute-lenses`，它會掃你的
+>   `~/.claude/pai-lenses/*.csv`、判定該進哪一層、幫你開 PR
+> - **安裝** → `pai-lenses` 仍是獨立 plugin，但由 `parallel-ai-agents` 的 marketplace 以相對路徑提供
+>
+> **為什麼併回**（見 [#33](https://github.com/PsychQuant/parallel-ai-agents/issues/33)）：
+> 拆成獨立 repo 的理由是「降低貢獻的出口成本」，但實際上它讓 user 層（`~/.claude/pai-lenses/`）
+> 的 lens **沒有回流路徑** —— 想貢獻的人得自己判斷該進哪一層、去哪個 repo 開 PR。
+> 併回之後兩層在同一棵樹上，貢獻 skill 才有辦法自動判定目標層。
+>
+> 本 repo 保留供歷史參照，不再接受 issue 或 PR。
+
+---
+
+以下為封存前的原始內容。
 
 [`parallel-ai-agents`](https://github.com/PsychQuant/parallel-ai-agents) 的 **lens pack** —— 用 CSV 提供可疊加的 reviewer lens。
 
